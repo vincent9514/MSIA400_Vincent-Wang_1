@@ -1,0 +1,139 @@
+---
+title: "MSIA_400_Q2Q3_ZIWENWANG"
+author: "Ziwen Wang"
+date: "10/15/2017"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Vincent Wang_MSIA400_Q2Q3
+
+## Q2(a)
+
+```{r }
+housing<-read.table("bostonhousing.txt",header = T)
+head(housing)
+summary(housing)
+str(housing)
+y<-housing[,1]
+x<-housing[,2:length(housing[1,])]
+```
+```{r}
+library(MASS)
+reg <-lm(y~., data=x)
+summary(reg)
+reg.step <- stepAIC(object=reg,steps = 1)
+```
+
+
+Pick two explanatory variables that are least likely to be in the best model, and support your suggestion in one sentence.Two variables with least two AIC.
+
+According to the AIC value of each variable, I choose Age and Indus since their AIC is the least among all variables.
+
+
+##Q2(b)
+Build regression model reg.picked by excluding the two explanatory variables selected in problem 2(a). Display summary() of the model.
+
+```{r}
+x_remove_age_indus<-x[, -which(names(x) %in% c("AGE","INDUS"))]
+head(x_remove_age_indus)
+
+reg.picked<-lm(y~., data=x_remove_age_indus)
+#reg.step <- stepAIC(object=reg, direction='back')
+summary(reg.picked)
+#reg.step <- stepAIC(object=reg, direction='both')
+```
+
+##Q2(3)
+```{r}
+sse_reg<-sum(reg$residuals^2)
+#mse<-mean(reg$residuals^2)
+mse_reg<-sse_reg/(length(housing[,1])-1-length(x[1,]))
+sae_reg<- sum(abs(reg$residuals))
+mae_reg<-sae_reg/(length(housing[,1])-1-length(x[1,]))
+
+sse_reg_picked<-sum(reg.picked$residuals^2)
+mse_reg_picked<-sse_reg_picked/(length(housing[,1])-1-length(x_remove_age_indus[1,]))
+sae_reg_picked<- sum(abs(reg.picked$residuals))
+mae_picked<-sae_reg_picked/(length(housing[,1])-1-length(x_remove_age_indus[1,]))
+
+comparsion<-matrix(c(mse_reg,mae_reg,mse_reg_picked,mae_picked),ncol = 2,byrow=TRUE)
+colnames(comparsion) <- c("MSE","MAE")
+rownames(comparsion) <- c("REG","REG.PICKED")
+comparsion <- as.table(comparsion)
+comparsion
+```
+Generally, there is no huge difference between the performances of these two models since their MSE and MAE are both very close. Based on the comparsion table, we found that both MSE and MAE of Reg is greater than the values of REG.PICKED. So I will pick the model REG.PICKED.
+
+## Q2(d)
+```{r}
+step(reg,steps = 1)
+step(reg.picked,steps = 1)
+#Generally, the AIC of each variable in model reg is little lower than reg.picked. After removing two most insignificant variables from the model, the AIC of each variabels become greater. So the second model is better.
+```
+
+##q3(a)
+```{r}
+lab<-read.table("labdata.txt",header = T)
+#View(lab)
+head(lab)
+y_lab<-lab[,1]
+x_lab<-lab[,2:length(lab[1,])]
+reg_lab<-lm(y_lab~.,data=x_lab)
+summary(reg_lab)
+```
+
+##q3(b)
+```{r}
+plot_x1<-plot(lab$x1,lab$y)
+plot_x2<-plot(lab$x2,lab$y)
+plot_x3<-plot(lab$x3,lab$y)
+plot_x4<-plot(lab$x4,lab$y)
+plot_x5<-plot(lab$x5,lab$y)
+plot_x6<-plot(lab$x6,lab$y)
+plot_x7<-plot(lab$x7,lab$y)
+plot_x8<-plot(lab$x8,lab$y)
+plot(lab)
+
+#The plot of X1 and Y is most likely to be used in a piecewise regression model
+plot_x1<-plot(lab$x1,lab$y,xlab= "x1", ylab = "y")
+```
+
+##q3(c)
+```{r}
+x_mean<-mean(lab$x1)
+x1<-lab$x1
+reg.seg<-lm(y_lab~(x1<x_mean)*x1)
+summary(reg.seg)
+
+library(segmented)
+reg_lab_2<-lm(y_lab~x1)
+reg.seg1<-segmented(reg_lab_2,  seg.Z = ~x1, psi = (x_mean))
+summary(reg.seg1)
+plot(x1,y_lab)
+plot(reg.seg1,  add=T)
+
+#for original reg model
+reg_lab_original<-lm(y_lab~x1)
+summary(reg_lab_original)
+
+#for piecewise reg model 
+summary(reg.seg1)
+
+R2_reg<-summary(reg_lab_original)$r.squared
+R2_reg
+R2_reg_piecewise<-summary(reg.seg1)$r.squared
+R2_reg_piecewise
+
+#since R2_reg_piecewise > R2_reg, model reg.piece better than model reg.
+```
+
+
+
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
