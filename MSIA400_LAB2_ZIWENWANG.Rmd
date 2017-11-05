@@ -1,0 +1,136 @@
+---
+title: "MSIA400_LAB2_ZIWEN_WANG"
+author: "Ziwen Wang"
+date: "11/4/2017"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+##Loading Data
+```{r}
+dt<- read.table("redwine.txt",header = T)
+head(dt)
+```
+
+```{r}
+#Q1
+m_RS<-mean(dt$RS,na.rm=T)
+m_RS
+M_SD<-mean(dt$SD,na.rm=T)
+M_SD
+```
+
+```{r}
+#Q2
+dt2<-dt[!is.na(dt$SD),c('SD','FS')]
+md1<-lm(SD~FS,data = dt2)
+md1$coefficients
+```
+
+```{r}
+#Q3
+dt3<-dt[is.na(dt$SD),c('FS')]
+predict.list <- predict(md1, newdata = data.frame(FS = dt3), se.fit = FALSE) 
+new_sd<-predict.list
+new_fs<-dt3
+dt4<-dt2
+whole_sd<-c(dt4$SD,new_sd)
+whole_fs<-c(dt4$FS,new_fs)
+avg_sd<-mean(whole_sd)
+avg_sd
+```
+
+```{r}
+#Q4
+avg.imp<- function (a, avg)
+  { missing<- is.na(a)
+  n.missing <-sum(missing) 
+  a.obs <-a[!missing] 
+  imputed <- a 
+  imputed[missing]<-avg
+  return (imputed)
+}
+
+AVG_RS<-mean(dt$RS,na.rm=T)
+head(AVG_RS)
+
+mean(dt[!is.na(dt$RS),'RS'])
+
+RS_IMP<-avg.imp(dt$RS,AVG_RS)
+head(RS_IMP)
+new_AVG_RS<-mean(RS_IMP)
+new_AVG_RS
+```
+
+```{r}
+#Q5
+#We have imputed all missing values in the data set. 
+#Build multiple linear regression model for the new data set and save it as winemodel. 
+#Print out the coefficients of the regression model.
+
+imp_dt<-dt
+imp_dt$RS<- RS_IMP
+imp_dt$SD[is.na(imp_dt$SD) == T] <- predict.list
+winemodel<-lm(QA~.,data =imp_dt )
+summary(winemodel)
+winemodel$coefficients
+```
+```{r}
+#Q6
+#Print out the summary of the model. 
+#Pick one attribute that is least likely to be related to QA based on p-values.
+summary(winemodel)
+# We choose PH since its p value is 0.414413 >0.05, we have confidence to believe PH is not significant to this model
+
+```
+
+```{r}
+#Q7
+#Perform 5-fold cross validation for the model you just built. Print out the average error rate.
+library(DAAG)
+validation = CVlm(data=imp_dt, m=5,  form.lm=formula(winemodel))
+attr(validation,'ms')
+```
+
+
+```{r}
+#Q8
+#Mr. Klabjan is informed that the attribute picked in Problem 6 actually contains outliers. 
+#Calculate the average and standard deviation of the selected attribute. 
+#Create a new data set after removing observa- tions that is outside of the 
+#range and name the data set as redwine2. 
+#Print out the dimension of redwine2 to know how many observations are removed.
+
+head(imp_dt$PH)
+PH_avg<-mean(imp_dt$PH)
+head(PH_avg)
+PH_std<-sd(imp_dt$PH)
+head(PH_std)
+
+up<-PH_avg+3*PH_std
+up
+down<-PH_avg-3*PH_std
+down
+redwine2<-subset(imp_dt,imp_dt$PH<up & imp_dt$PH>down)
+remove<-length(imp_dt$PH)-length(redwine2$PH)
+remove
+```
+```{r}
+#Q9
+#Build regression model winemodel2 using the new data set from Problem 8 
+#and print out the summary. Compare this model with the model obtained in 
+#Problem 6 and decide which one is better. Pick 5 attributes that 
+#is most likely to be related to QA based on p-values.
+
+new_md<-lm(QA~.,data=redwine2)
+summary(new_md)
+
+#Since the R^2 of the new model is 0.363 and the adjusted R^2 is 0.358, the old model's value is
+#0.358 and 0.354, both R^2 and R^2 adjusted of new model is higher than old model. The new
+#model is better.
+
+#VA,SU,AL,SD,CH the vlause most related with the model.
+```
