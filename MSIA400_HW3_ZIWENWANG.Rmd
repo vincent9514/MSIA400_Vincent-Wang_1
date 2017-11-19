@@ -1,0 +1,144 @@
+---
+title: "MSIA400_HW3"
+author: "Ziwen Wang"
+date: "11/15/2017"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+web = read.table("markov100.txt", header=F)
+P=as.matrix(web,nrow=100,ncol=100,byrow=TRUE)
+head(P)
+```
+```{r}
+#Q1a
+a=c(1,rep(0,99))
+library(expm)
+q1<-a %*% (P %^%10)
+q1
+q1_a<-q1[5]
+q1_a
+```
+
+```{r}
+#Q1b
+a<-c(1/3,1/3,1/3,rep(0,97))
+library(expm)
+q2<-a %*% (P %^%10)
+q2_a<-q2[10]
+q2_a
+```
+
+
+```{r}
+#Q1c
+Q = t(P) - diag(100)
+Q[100,] = rep(1,100)
+rhs = c(rep(0,99),1)
+Pi = solve(Q) %*% rhs
+Pi[1]
+```
+
+```{r}
+#Q1d
+B =P[1:99,1:99]
+Q = diag(99) - B
+e = rep(1,99)
+m = solve(Q) %*% e
+m[1]
+```
+
+```{r}
+#Q2a
+web = read.table("webtraffic.txt", header=T)
+#View(web)
+web1<-colSums(web)
+P=matrix(web1,nrow=9,ncol=9,byrow=TRUE)
+P
+```
+
+```{r}
+#Q2b
+Traffic<-P
+Traffic[9,1]<-1000
+sum1<-rowSums(Traffic)
+P2<-Traffic/sum1
+P2[is.na(P2)]<-0
+P_Q2<-P2
+P_Q2
+```
+
+```{r}
+#Q2c
+Q = t(P_Q2) - diag(9)
+Q[9,] = rep(1,9)
+rhs = c(rep(0,8),1)
+Pi = solve(Q) %*% rhs
+Pi
+```
+
+```{r}
+#Q2d
+avg<-c(0.1,2,3,5,5,3,3,2,0)
+time<-avg * Pi
+avg_time<-sum(time)
+avg_time
+```
+
+```{r}
+
+#Q2e
+Traffic<-P
+Traffic[9,1]<-1000
+sum1<-rowSums(Traffic)
+P2<-Traffic/sum1
+P2[is.na(P2)]<-0
+P_Q2<-P2
+P_Q3<-P_Q2
+
+P_Q3[2,3]<-P_Q3[2,3]*(1-0.3)
+P_Q3[2,6]<-P_Q2[2,3]*(0.3)+P_Q3[2,6]
+P_Q3[2,4]<-P_Q3[2,4]*(1-0.2)
+P_Q3[2,7]<-P_Q2[2,4]*(0.2)+P_Q3[2,7]
+
+P_final<-P_Q3
+P_final
+
+Q2 = t(P_final) - diag(9)
+Q2[9,] = rep(1,9)
+rhs = c(rep(0,8),1)
+Pi2 = solve(Q2) %*% rhs
+
+#PI2
+Pi2
+
+#PI1
+Pi
+
+#since the steady state pro of S23 and S24 from PI2 are 0.12104331 and 0.12275720, which are 
+#lower than the ones in PI1, the link did help balance the traffic.
+```
+```{r}
+#compare the variance of Pi and Pi2
+var(Pi)
+var(Pi2)
+
+#since the Var(P2)<Var(P1), the P2 becomes better
+```
+
+
+
+
+
+
+
+
+
+
+
+
